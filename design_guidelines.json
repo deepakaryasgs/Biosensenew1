@@ -1,0 +1,156 @@
+{
+  "theme": {
+    "archetype": "Archetype 4: Swiss & High-Contrast",
+    "mode": "hybrid_toggle",
+    "rationale": "High-contrast structural grayscale paired with stark signal colors ensures absolute clarity for field technicians and scientists reading live telemetry under varying lighting conditions. Avoids gradients and excessive shadows for a technical, objective aesthetic."
+  },
+  "typography": {
+    "fonts": {
+      "headings": "IBM Plex Sans",
+      "body": "IBM Plex Sans",
+      "mono": "JetBrains Mono"
+    },
+    "scales": {
+      "h1_hero": { "fontSize": 56, "fontFamily": "JetBrains Mono", "letterSpacing": -1.5, "fontWeight": "700" },
+      "h2": { "fontSize": 32, "fontFamily": "IBM Plex Sans", "letterSpacing": -0.5, "fontWeight": "600" },
+      "h3": { "fontSize": 24, "fontFamily": "IBM Plex Sans", "letterSpacing": 0, "fontWeight": "600" },
+      "h4_card": { "fontSize": 18, "fontFamily": "IBM Plex Sans", "fontWeight": "500" },
+      "body": { "fontSize": 16, "fontFamily": "IBM Plex Sans", "lineHeight": 24, "fontWeight": "400" },
+      "overline": { "fontSize": 12, "fontFamily": "IBM Plex Sans", "textTransform": "uppercase", "letterSpacing": 1.5, "fontWeight": "600" },
+      "data_live": { "fontSize": 48, "fontFamily": "JetBrains Mono", "letterSpacing": -1, "fontWeight": "600" }
+    }
+  },
+  "colors": {
+    "dark": {
+      "background": "#050505",
+      "surface": "#121212",
+      "surfaceElevated": "#1A1A1A",
+      "border": "#2E2E2E",
+      "textPrimary": "#FFFFFF",
+      "textSecondary": "#A1A1AA",
+      "primary": "#3399FF",
+      "safe": "#00E676",
+      "warning": "#FFEA00",
+      "critical": "#FF1744",
+      "ledRed": "#FF3B30",
+      "ledGreen": "#34C759",
+      "ledBlue": "#007AFF"
+    },
+    "light": {
+      "background": "#F9FAFB",
+      "surface": "#FFFFFF",
+      "surfaceElevated": "#F3F4F6",
+      "border": "#E5E7EB",
+      "textPrimary": "#111827",
+      "textSecondary": "#6B7280",
+      "primary": "#0052FF",
+      "safe": "#00C853",
+      "warning": "#F57C00",
+      "critical": "#D50000",
+      "ledRed": "#D32F2F",
+      "ledGreen": "#2E7D32",
+      "ledBlue": "#1565C0"
+    }
+  },
+  "spacing_and_layout": {
+    "baseUnit": 4,
+    "scale": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32,
+      "2xl": 48
+    },
+    "touchTargets": {
+      "minHeight": 44,
+      "minWidth": 44
+    },
+    "borderRadius": {
+      "sm": 4,
+      "md": 8,
+      "lg": 12,
+      "pill": 9999,
+      "none": 0
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": {
+        "backgroundColor": "primary",
+        "borderRadius": "md",
+        "minHeight": 48,
+        "justifyContent": "center",
+        "alignItems": "center"
+      },
+      "measure_trigger": {
+        "minHeight": 80,
+        "borderRadius": "pill",
+        "backgroundColor": "primary",
+        "shadowColor": "primary"
+      }
+    },
+    "cards": {
+      "base": {
+        "backgroundColor": "surface",
+        "borderRadius": "md",
+        "padding": "lg",
+        "borderWidth": 1,
+        "borderColor": "border"
+      }
+    },
+    "status_badge": {
+      "layout": {
+        "paddingHorizontal": 12,
+        "paddingVertical": 6,
+        "borderRadius": "pill",
+        "borderWidth": 1
+      }
+    },
+    "bottom_tabs": {
+      "height": 64,
+      "paddingBottom": 8,
+      "borderTopWidth": 1,
+      "icons": {
+        "Dashboard": "view-dashboard-outline",
+        "Measure": "test-tube",
+        "Calibrate": "tune-vertical",
+        "History": "history",
+        "Settings": "cog-outline"
+      }
+    }
+  },
+  "data_visualization": {
+    "library": "victory-native",
+    "rationale": "victory-native is REQUIRED. react-native-chart-kit is too rigid and aesthetically resembles a fitness app. Victory allows low-level control for scientific viz (custom grids, exact tick values, scatter plots overlaid on line curves for calibration).",
+    "chart_styles": {
+      "line": { "strokeWidth": 2, "fill": "transparent" },
+      "grid": { "strokeDasharray": "4, 4", "strokeOpacity": 0.2 },
+      "scatter": { "size": 4 }
+    }
+  },
+  "media": {
+    "images": [
+      {
+        "url": "https://images.pexels.com/photos/18405255/pexels-photo-18405255.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "splash_background",
+        "description": "Moody, dark wavy water texture for the splash screen background, representing optical fluid analysis."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1639257046215-1799b61438bc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwyfHx3YXRlciUyMHJpcHBsZSUyMGRhcmt8ZW58MHx8fHwxNzc3MDA2ODQ0fDA&ixlib=rb-4.1.0&q=85",
+        "category": "dashboard_header",
+        "description": "Abstract water ripple image. Use as a low-opacity background layer inside the top dashboard connection card to give it texture."
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the color mappings for 'light' and 'dark' mode. Provide a toggle mechanism in Settings that saves to local storage.",
+    "Use @expo/vector-icons exclusively (MaterialCommunityIcons preferred).",
+    "Install and configure 'victory-native' alongside 'react-native-svg' for all charting needs.",
+    "Format all real-time data readouts (Absorbance, Intensity) using the 'data_live' typography scale with tabular-nums.",
+    "Ensure all buttons and touchable areas have a minimum dimension of 44x44pt.",
+    "Implement the BLE logic with a 'Demo Mode' toggle that feeds simulated sinusoidal/noise data into the measure tab for testing without hardware.",
+    "Do not use box shadows extensively. Rely on 1px borders to separate components (Structural Grayscale).",
+    "Add test IDs to ALL interactive elements using kebab-case (e.g., data-testid='start-measurement-btn')."
+  ]
+}
