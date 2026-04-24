@@ -1,0 +1,47 @@
+{
+  "summary": "Frontend-only mobile testing on Expo web preview. Splash→Dashboard→Connect→Measure→Calibrate→History→Settings core flows WORK. Fixes from iter1 confirmed: /connect route loads (no 404), AsyncStorage causes no page errors, demo BLE flow completes. Live absorbance streams and updates (0.000→0.442 after 3s), chart renders, calibration saves with Active badge, theme toggle works, LED fixed toggle reveals fixed-wavelength-input, ALL settings persist across reload. However two testID mismatches vs the review_request block a few assertions and the native confirm dialog used for delete lacks a web-compatible testID.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "history.tsx", "issue": "History item testID uses prefix 'hist-{id}' (line 93) but review_request expects 'history-item-{id}'. Test selectors [data-testid^=history-item-] return 0 matches even when items are visible in UI.", "testID": "hist-{id} -> history-item-{id}", "priority": "HIGH"},
+      {"component": "measure.tsx", "issue": "Concentration readout on Measure screen has NO testID (expected 'live-concentration'). The value renders correctly (e.g. 19.19 mg/L when a calibration is active, '—' otherwise) but cannot be asserted by automation. Review_request explicitly lists this ID.", "testID": "live-concentration (missing)", "priority": "HIGH"},
+      {"component": "measurement/[id].tsx", "issue": "Metric testIDs expected by review_request are missing: 'metric-mean-absorbance', 'metric-mean-intensity', 'metric-concentration'. Could not open detail to sanity-check but query by these testIDs returned MISSING.", "testID": "metric-mean-absorbance / metric-mean-intensity / metric-concentration", "priority": "MEDIUM"},
+      {"component": "measurement/[id].tsx + measure.tsx (Stop & Save)", "issue": "Delete confirmation and Stop&Save rely on native window.confirm/alert on web. No 'confirm-delete-btn' testID exists, so automated flows must hook page.on('dialog'). Consider a custom Modal with testID 'confirm-delete-btn' for consistency.", "testID": "confirm-delete-btn (missing)", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "History search/filter", "issue": "During automated run, typing 'TEST' into history-search while a matching item ('TEST-002') was in the list caused the visible items to hide. Could be controlled-input timing OR case-sensitive matching; recommend verifying `.toLowerCase()` on both sides of filter predicate.", "affected_testIDs": ["history-search"]}
+    ],
+    "design_issues": [
+      {"screen": "Connect", "issues": ["A wrapper element with testID 'device-card' is rendered but not visible (empty wrapper matched by [data-testid^='device-']). Causes automation to click an invisible element. Remove the generic wrapper testID or make it more specific."]}
+    ],
+    "react_native_issues": [
+      {"component": "general", "issue": "Metro warnings: 'Too many screens defined. Route \"connect\" is extraneous. / Route \"measurement/[id]\" is extraneous'. The current _layout.tsx no longer declares them explicitly (fix applied), but warnings persist - may be cached HMR from a prior bundle; verify after full restart: sudo supervisorctl restart expo."},
+      {"component": "packages", "issue": "Expo doctor reports version mismatches: @react-native-async-storage/async-storage@3.0.2 (expected 2.2.0), expo-file-system@55.0.17 (expected ~19.0.21), expo-sharing@55.0.18 (expected ~14.0.8), react-native-svg@15.15.4 (expected 15.12.1). Iter1 context note said async-storage was downgraded to 2.2.0 but it is still 3.0.2 in node_modules."},
+      {"component": "Animated", "issue": "Console warning: 'useNativeDriver is not supported because the native animated module is missing' - harmless on web but noisy."},
+      {"component": "props.pointerEvents deprecated", "issue": "Non-fatal warning; migrate to style.pointerEvents."}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_2.json"],
+  "action_items": [
+    "Rename testID prefix in /app/frontend/app/(tabs)/history.tsx line 93 from `hist-${m.id}` to `history-item-${m.id}` to match review_request.",
+    "Add testID='live-concentration' to the concentration <Text> inside the LIVE MEASUREMENT card on /app/frontend/app/(tabs)/measure.tsx (the value that shows 19.19 mg/L or '—').",
+    "Add testIDs on /app/frontend/app/measurement/[id].tsx for the three metric tiles: metric-mean-absorbance, metric-mean-intensity, metric-concentration.",
+    "Remove the wrapper testID 'device-card' on /app/frontend/app/connect.tsx (or move it off the invisible container) so [data-testid^='device-'] only matches real rows.",
+    "Verify async-storage version: `yarn why @react-native-async-storage/async-storage` — resolution shows 3.0.2 despite iter1 claim of 2.2.0 downgrade. Run `yarn add @react-native-async-storage/async-storage@2.2.0` and restart expo to align with Expo SDK 54.",
+    "Double-check history search predicate uses case-insensitive match on sample_id/contaminant/operator.",
+    "Optional: replace native window.confirm for delete with an in-app Modal carrying testID 'confirm-delete-btn' to match the review_request."
+  ],
+  "critical_code_review_comments": [
+    "history.tsx line 93 testID naming inconsistent with review_request contract.",
+    "measure.tsx live concentration <Text> lacks testID, preventing assertion of concentration-with-calibration behavior.",
+    "connect.tsx exposes an invisible 'device-card' testID that conflicts with device row queries.",
+    "Package versions drifted from Expo SDK expected set; can cause subtle web-storage bugs."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "85%"},
+  "seed_data_creation": "Created 1 calibration profile 'Nitrate 540nm' (Active) and 1 measurement 'TEST-002' in web localStorage during test run.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Demo Mode is default on web (native BLE unavailable). Splash delay ~1.4s, then tabs mount. Stop & Save and Delete use native window.confirm on web — always register page.on('dialog', lambda d: d.accept()). Device rows use testID 'device-demo-esp32-a' / 'device-demo-esp32-b'. History items currently use 'hist-{id}' prefix (NOT history-item). Concentration text on Measure has no testID yet. AsyncStorage works (settings persisted across page.reload), zero uncaught page errors. Mobile viewport 390x844.",
+  "rca_of_issue": "testID mismatches are pure naming drift between the spec (review_request) and current implementation — main agent needs to align testID strings. Version drift of async-storage is likely why iter1 warnings about ‘Native module is null’ existed; the package.json may have been updated but node_modules not refreshed."
+}
