@@ -159,6 +159,22 @@ export default function Measure() {
             </Text>
           </View>
 
+          <View style={{ marginTop: spacing.md }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 11, letterSpacing: 1.5 }}>CONCENTRATION</Text>
+            <Text
+              testID="live-concentration"
+              style={{
+                color: colors.textPrimary,
+                fontSize: 22,
+                fontFamily: 'monospace',
+                fontVariant: ['tabular-nums'],
+                marginTop: 4,
+              }}
+            >
+              {concFromCal != null ? `${concFromCal.toFixed(2)} ${settings.unit}` : '—'}
+            </Text>
+          </View>
+
           <View style={{ flexDirection: 'row', marginTop: spacing.md, gap: 10 }}>
             <MiniMetric label="Intensity" value={intensity.toFixed(0)} unit="I" />
             <MiniMetric

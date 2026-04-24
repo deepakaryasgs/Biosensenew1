@@ -132,9 +132,10 @@ export default function MeasurementDetail() {
         <Card style={{ marginTop: spacing.md }}>
           <Label>Results</Label>
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-            <Metric label="Mean A" value={m.meanAbsorbance.toFixed(3)} />
-            <Metric label="Mean I" value={m.meanIntensity.toFixed(0)} />
+            <Metric testID="metric-mean-absorbance" label="Mean A" value={m.meanAbsorbance.toFixed(3)} />
+            <Metric testID="metric-mean-intensity" label="Mean I" value={m.meanIntensity.toFixed(0)} />
             <Metric
+              testID="metric-concentration"
               label={`Conc (${settings.unit})`}
               value={m.concentration != null ? m.concentration.toFixed(2) : '—'}
             />

@@ -90,7 +90,7 @@ export default function History() {
         {list.map((m) => (
           <TouchableOpacity
             key={m.id}
-            testID={`hist-${m.id}`}
+            testID={`history-item-${m.id}`}
             onPress={() => router.push(`/measurement/${m.id}`)}
             style={{
               backgroundColor: colors.surface,
