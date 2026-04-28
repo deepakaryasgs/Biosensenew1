@@ -41,11 +41,6 @@ export default function Settings() {
           </View>
         </Card>
 
-        <Card style={{ marginTop: spacing.md }} testID="operator-card">
-          <Label>Operator</Label>
-          <Input testID="operator-input" value={settings.operator} onChangeText={(v) => updateSettings({ operator: v })} placeholder="Name" />
-        </Card>
-
         <Card style={{ marginTop: spacing.md }} testID="demo-card">
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flex: 1 }}>

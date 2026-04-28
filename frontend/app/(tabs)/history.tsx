@@ -23,7 +23,6 @@ export default function History() {
       return (
         m.sampleId.toLowerCase().includes(qs) ||
         m.contaminant.toLowerCase().includes(qs) ||
-        m.operator.toLowerCase().includes(qs) ||
         m.notes.toLowerCase().includes(qs)
       );
     });
@@ -39,7 +38,7 @@ export default function History() {
           testID="history-search"
           value={q}
           onChangeText={setQ}
-          placeholder="Search sample, contaminant, operator…"
+          placeholder="Search sample, contaminant, notes…"
           placeholderTextColor={colors.textSecondary}
           style={{
             backgroundColor: colors.surfaceElevated,
@@ -104,7 +103,7 @@ export default function History() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 15 }}>{m.sampleId}</Text>
-                <Sub style={{ marginTop: 2 }}>{m.contaminant} · {m.operator}</Sub>
+                <Sub style={{ marginTop: 2 }}>{m.contaminant}</Sub>
                 <Sub style={{ marginTop: 2 }}>{new Date(m.createdAt).toLocaleString()}</Sub>
               </View>
               <View style={{ alignItems: 'flex-end' }}>

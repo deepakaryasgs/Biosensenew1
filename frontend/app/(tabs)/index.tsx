@@ -34,16 +34,8 @@ export default function Dashboard() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl }} testID="dashboard-scroll">
-        <View style={{ marginBottom: spacing.lg }}>
-          <Label>Operator</Label>
-          <Title style={{ marginTop: 4 }}>{settings.operator}</Title>
-          <Sub style={{ marginTop: 4 }}>
-            {settings.demoMode ? 'Demo simulation active' : 'Live hardware mode'}
-          </Sub>
-        </View>
-
         {/* Device card */}
-        <Card testID="device-card" style={{ marginBottom: spacing.md }}>
+        <Card testID="device-card" style={{ marginBottom: spacing.md, marginTop: spacing.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
               <Label>Device</Label>

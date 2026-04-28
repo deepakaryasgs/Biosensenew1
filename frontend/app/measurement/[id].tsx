@@ -46,7 +46,6 @@ export default function MeasurementDetail() {
     const meta = [
       `# AquaSpec Measurement Report`,
       `# Sample ID: ${m.sampleId}`,
-      `# Operator: ${m.operator}`,
       `# Date: ${m.createdAt}`,
       `# Contaminant: ${m.contaminant}`,
       `# Wavelength: ${m.wavelength}`,
@@ -159,7 +158,7 @@ export default function MeasurementDetail() {
             <View style={{ alignItems: 'center', marginBottom: spacing.sm }}>
               <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 16 }}>{m.sampleId}</Text>
               <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>
-                {mode === 'absorbance' ? 'Absorbance vs Time' : `Concentration vs Time (${settings.unit})`} · {new Date(m.createdAt).toLocaleString()}
+                {mode === 'absorbance' ? 'Absorbance vs Time' : `Concentration vs Time (${settings.unit})`}
               </Text>
             </View>
             <View style={{ alignItems: 'center' }}>
@@ -168,7 +167,7 @@ export default function MeasurementDetail() {
                 width={screenW}
                 height={200}
                 data={mode === 'absorbance' ? absData : conData}
-                strokeColor={colors.primary}
+                strokeColor={wavelengthColor(m.wavelength, colors)}
                 xLabel="t (s)"
                 yLabel={mode === 'absorbance' ? 'A' : settings.unit}
               />
@@ -321,4 +320,12 @@ function ChipBtn({ active, label, onPress, testID }: any) {
       <Text style={{ color: active ? '#fff' : colors.textSecondary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{label}</Text>
     </TouchableOpacity>
   );
+}
+
+function wavelengthColor(w: string, colors: any): string {
+  const s = (w || '').toLowerCase();
+  if (s.includes('red')) return colors.ledRed;
+  if (s.includes('blue')) return colors.ledBlue;
+  if (s.includes('green')) return colors.ledGreen;
+  return colors.primary;
 }

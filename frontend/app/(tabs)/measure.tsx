@@ -98,7 +98,7 @@ export default function Measure() {
     const meas: Measurement = {
       id: `${Date.now()}`,
       sampleId: sampleId || `SMP-${Date.now().toString().slice(-5)}`,
-      operator: settings.operator,
+      operator: '',
       contaminant: contaminant || (activeCal?.contaminant ?? 'Unknown'),
       notes,
       wavelength: wavelength,
