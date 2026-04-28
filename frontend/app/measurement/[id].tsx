@@ -146,16 +146,22 @@ export default function MeasurementDetail() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Label>Graph</Label>
             <View style={{ flexDirection: 'row', gap: 6 }}>
-              <ChipBtn active={mode === 'absorbance'} label="A · t" onPress={() => setMode('absorbance')} testID="graph-mode-abs" />
+              <ChipBtn active={mode === 'absorbance'} label="Absorbance" onPress={() => setMode('absorbance')} testID="graph-mode-abs" />
               <ChipBtn
                 active={mode === 'concentration'}
-                label={`C · t`}
+                label="Concentration"
                 onPress={() => setMode('concentration')}
                 testID="graph-mode-conc"
               />
             </View>
           </View>
-          <ViewShot ref={shotRef} options={{ format: 'png', quality: 1 }} style={{ backgroundColor: colors.surface, marginTop: 10 }}>
+          <ViewShot ref={shotRef} options={{ format: 'png', quality: 1 }} style={{ backgroundColor: colors.surface, marginTop: 10, padding: spacing.md }}>
+            <View style={{ alignItems: 'center', marginBottom: spacing.sm }}>
+              <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 16 }}>{m.sampleId}</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>
+                {mode === 'absorbance' ? 'Absorbance vs Time' : `Concentration vs Time (${settings.unit})`} · {new Date(m.createdAt).toLocaleString()}
+              </Text>
+            </View>
             <View style={{ alignItems: 'center' }}>
               <Chart
                 testID="detail-chart"

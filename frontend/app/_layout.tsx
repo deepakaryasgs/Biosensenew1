@@ -18,7 +18,12 @@ function StackContainer() {
           headerTitleStyle: { fontWeight: '600', letterSpacing: 0.3 },
           contentStyle: { backgroundColor: colors.background },
         }}
-      />
+      >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="connect" options={{ title: 'Device Connection' }} />
+        <Stack.Screen name="measurement/[id]" options={{ title: 'Measurement' }} />
+      </Stack>
     </>
   );
 }

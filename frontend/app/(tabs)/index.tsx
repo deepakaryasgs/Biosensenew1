@@ -212,11 +212,17 @@ function StatBox({ value, label, color }: { value: number; label: string; color:
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: radius.md,
-        padding: spacing.md,
+        paddingVertical: spacing.md,
+        paddingHorizontal: 6,
+        alignItems: 'center',
       }}
     >
       <Text style={{ color, fontSize: 22, fontWeight: '700', fontFamily: 'monospace' }}>{value}</Text>
-      <Text style={{ color: colors.textSecondary, fontSize: 10, letterSpacing: 1, marginTop: 2, textTransform: 'uppercase' }}>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        style={{ color: colors.textSecondary, fontSize: 9, letterSpacing: 0.5, marginTop: 2, textTransform: 'uppercase' }}
+      >
         {label}
       </Text>
     </View>

@@ -213,7 +213,7 @@ export default function Measure() {
               width={screenW}
               height={180}
               data={samples.map((s) => ({ x: s.t, y: s.absorbance }))}
-              strokeColor={colors.primary}
+              strokeColor={wavelengthColor()}
               xLabel="t (s)"
               yLabel="A"
               minY={0}
