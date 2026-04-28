@@ -18,7 +18,7 @@ export default function Measure() {
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
   const [ledOn, setLedOn] = useState(true);
-  const [wavelength, setWavelength] = useState<Wavelength>(settings.ledType === 'fixed' ? 'fixed' : 'green');
+  const [wavelength, setWavelength] = useState<Wavelength>('green');
   const [sampleId, setSampleId] = useState('');
   const [contaminant, setContaminant] = useState('');
   const [notes, setNotes] = useState('');
@@ -28,12 +28,16 @@ export default function Measure() {
   const activeCal = calibrations.find((c) => c.id === activeCalibrationId) || null;
 
   useEffect(() => {
-    bleService.setWavelength(wavelength);
+    bleService.setWavelength(wavelength).catch(() => {});
   }, [wavelength]);
 
   useEffect(() => {
     bleService.setBlank(settings.blankIntensity);
   }, [settings.blankIntensity]);
+
+  useEffect(() => {
+    bleService.setLedOn(ledOn).catch(() => {});
+  }, [ledOn]);
 
   useEffect(() => {
     const unsub = bleService.onData((s) => {
@@ -97,7 +101,7 @@ export default function Measure() {
       operator: settings.operator,
       contaminant: contaminant || (activeCal?.contaminant ?? 'Unknown'),
       notes,
-      wavelength: wavelength === 'fixed' ? `${settings.fixedWavelength} nm` : wavelength,
+      wavelength: wavelength,
       calibrationId: activeCal?.id ?? null,
       createdAt: new Date().toISOString(),
       durationSec: pts[pts.length - 1].t,
@@ -117,15 +121,14 @@ export default function Measure() {
   const screenW = Dimensions.get('window').width - spacing.md * 2 - spacing.lg * 2;
 
   const wavelengthLabel = () => {
-    if (settings.ledType === 'fixed') return `${settings.fixedWavelength} nm`;
-    return wavelength === 'red' ? '~635 nm (Red)' : wavelength === 'green' ? '~540 nm (Green)' : '~470 nm (Blue)';
+    return wavelength === 'red' ? '~635 nm (Red)' : wavelength === 'green' ? '~540 nm (Green)' : wavelength === 'blue' ? '~470 nm (Blue)' : 'Off';
   };
 
   const wavelengthColor = () => {
     if (wavelength === 'red') return colors.ledRed;
     if (wavelength === 'green') return colors.ledGreen;
     if (wavelength === 'blue') return colors.ledBlue;
-    return colors.primary;
+    return colors.textSecondary;
   };
 
   return (
@@ -264,46 +267,44 @@ export default function Measure() {
             </TouchableOpacity>
           </View>
 
-          {settings.ledType === 'rgb' && (
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.md }}>
-              {(['red', 'green', 'blue'] as Wavelength[]).map((w) => (
-                <TouchableOpacity
-                  key={w}
-                  testID={`wavelength-${w}`}
-                  onPress={() => setWavelength(w)}
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.md }}>
+            {(['red', 'green', 'blue'] as Wavelength[]).map((w) => (
+              <TouchableOpacity
+                key={w}
+                testID={`wavelength-${w}`}
+                onPress={() => setWavelength(w)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: radius.md,
+                  borderWidth: 1,
+                  borderColor:
+                    wavelength === w
+                      ? w === 'red'
+                        ? colors.ledRed
+                        : w === 'green'
+                        ? colors.ledGreen
+                        : colors.ledBlue
+                      : colors.border,
+                  backgroundColor: wavelength === w ? colors.surfaceElevated : 'transparent',
+                  alignItems: 'center',
+                }}
+              >
+                <View
                   style={{
-                    flex: 1,
-                    paddingVertical: 12,
-                    borderRadius: radius.md,
-                    borderWidth: 1,
-                    borderColor:
-                      wavelength === w
-                        ? w === 'red'
-                          ? colors.ledRed
-                          : w === 'green'
-                          ? colors.ledGreen
-                          : colors.ledBlue
-                        : colors.border,
-                    backgroundColor: wavelength === w ? colors.surfaceElevated : 'transparent',
-                    alignItems: 'center',
+                    width: 14,
+                    height: 14,
+                    borderRadius: 7,
+                    backgroundColor: w === 'red' ? colors.ledRed : w === 'green' ? colors.ledGreen : colors.ledBlue,
+                    marginBottom: 4,
                   }}
-                >
-                  <View
-                    style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: 7,
-                      backgroundColor: w === 'red' ? colors.ledRed : w === 'green' ? colors.ledGreen : colors.ledBlue,
-                      marginBottom: 4,
-                    }}
-                  />
-                  <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>
-                    {w}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+                />
+                <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>
+                  {w}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </Card>
 
         {/* Sample info */}

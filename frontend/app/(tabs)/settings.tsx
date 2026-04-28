@@ -46,41 +46,6 @@ export default function Settings() {
           <Input testID="operator-input" value={settings.operator} onChangeText={(v) => updateSettings({ operator: v })} placeholder="Name" />
         </Card>
 
-        <Card style={{ marginTop: spacing.md }} testID="led-card">
-          <Label>LED Configuration</Label>
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.sm }}>
-            {(['rgb', 'fixed'] as const).map((t) => (
-              <TouchableOpacity
-                key={t}
-                testID={`led-${t}`}
-                onPress={() => updateSettings({ ledType: t })}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: settings.ledType === t ? colors.primary : colors.border,
-                  backgroundColor: settings.ledType === t ? colors.surfaceElevated : 'transparent',
-                  borderRadius: radius.md,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: colors.textPrimary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, fontSize: 12 }}>
-                  {t}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {settings.ledType === 'fixed' && (
-            <Input
-              testID="fixed-wavelength-input"
-              value={String(settings.fixedWavelength)}
-              onChangeText={(v) => updateSettings({ fixedWavelength: Number(v) || 0 })}
-              keyboardType="numeric"
-              placeholder="Wavelength (nm)"
-            />
-          )}
-        </Card>
-
         <Card style={{ marginTop: spacing.md }} testID="demo-card">
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flex: 1 }}>

@@ -35,8 +35,6 @@ export interface CalibrationProfile {
 
 export interface Settings {
   operator: string;
-  ledType: 'rgb' | 'fixed';
-  fixedWavelength: number; // nm
   safeMax: number; // concentration threshold
   warningMax: number; // between safeMax and warningMax = warning, above = critical
   unit: string;
@@ -60,13 +58,11 @@ interface StoreCtx {
 
 const defaultSettings: Settings = {
   operator: 'Field Technician',
-  ledType: 'rgb',
-  fixedWavelength: 525,
   safeMax: 5,
   warningMax: 15,
   unit: 'mg/L',
   blankIntensity: 1000,
-  demoMode: true,
+  demoMode: false,
 };
 
 const Ctx = createContext<StoreCtx | null>(null);

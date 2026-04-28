@@ -1,67 +1,98 @@
-# AquaSpec — Portable Water-Quality Biosensor Companion
+# AquaSpec — Portable Water-Quality Biosensor Companion (Production)
 
 ## Product Overview
-AquaSpec is a cross-platform Expo React Native mobile app that pairs with a portable ESP32-powered optical biosensor. It converts transmitted light intensity measured through a sample cuvette into absorbance (Beer–Lambert) and then into contaminant concentration using user-defined calibration curves. Designed for field technicians and lab operators; runs fully offline.
+Cross-platform Expo React Native (Android + iOS) app that pairs over Bluetooth Low Energy with an ESP32-powered optical biosensor. Reads transmitted-light intensity from a BPW34 photodiode, computes absorbance via Beer–Lambert (A = log₁₀(I₀/I)), converts to contaminant concentration with user-defined calibration curves, and stores/exports results — fully offline.
 
-## Target Users
-- Field water-quality technicians (low-light portable usage)
-- Lab operators running enzymatic assays with spectrophotometric readout
-- Researchers iterating calibration curves across contaminants / wavelengths
+## Hardware Stack
+| Component | Notes |
+|---|---|
+| ESP32 NodeMCU-32 (38-pin) | BLE GATT server, runs `aquaspec_biosensor.ino` |
+| Common-cathode RGB LED | GPIO 25 (R) / 26 (G) / 27 (B), each with 220 Ω resistor |
+| BPW34 photodiode | Anode → 3.3 V, cathode → GPIO 34 with 1 MΩ load to GND |
+| (Optional) Battery monitor | 100 kΩ : 100 kΩ divider → GPIO 35 |
 
-## Core User Journeys
-1. Configure LED type + operator in Settings.
-2. Create a calibration profile with standards → activate it.
-3. Open Measure → connect device (BLE or Demo) → set blank intensity → Start → Stop & Save.
-4. Review, filter, and export measurements (CSV / PNG share) from History.
+## BLE Protocol (App ↔ ESP32)
+| Characteristic | Properties | Payload |
+|---|---|---|
+| Measurement Data | NOTIFY | 16 bytes LE: `u32 t_ms, f32 intensity, f32 blank_I0, f32 absorbance` |
+| LED Control | WRITE | 2 bytes: `u8 led_on, u8 wavelength (0=off,1=R,2=G,3=B)` |
+| Battery | READ + NOTIFY | 1 byte: `u8 percent` |
+| Blank I₀ | WRITE | 4 bytes: `f32` |
 
-## Feature Set (MVP delivered)
-### Connectivity
-- BLE scanning and pairing with ESP32 (native dev build) via `react-native-ble-plx`.
-- Transparent fallback to Demo Mode inside Expo Go or runtimes without native BLE.
-- Device status badge (Connected / Offline), battery readout, demo toggle.
+Service UUID: `a1b2c3d4-0001-4000-8000-000000000001`
+
+## App Features
+### Connectivity (real BLE)
+- Filtered scan by AquaSpec Service UUID via `react-native-ble-plx`.
+- Auto-subscribe to Measurement Data + Battery characteristics on connect.
+- Live battery readout, connection status badge.
+- Optional Demo Mode toggle for offline UI exploration.
 
 ### Measurement
-- Real-time intensity → absorbance computation with `A = log10(I0 / I)`.
-- Live tabular-num readouts: Absorbance (OD), Intensity, Concentration.
+- Beer–Lambert absorbance from intensity stream (every 200 ms).
+- Live tabular-num readouts: Absorbance, Intensity, Concentration.
 - Start / Pause / Resume / Stop controls.
-- Threshold badge: Safe / Warning / Critical.
-- LED on/off + RGB color (Red / Green / Blue) with approximate wavelength labels; or fixed wavelength entry.
-- Live SVG chart (Absorbance vs time).
+- Threshold badges: Safe / Warning / Critical from active calibration.
+- **RGB LED control** — Red/Green/Blue taps send WRITE to ESP32 → physical LED switches.
+- LED ON/OFF toggle sends real BLE write.
 
 ### Calibration
-- Linear, Polynomial (deg 2-4), and Manual (slope/intercept) models.
-- Dynamic standards table, live R² and regression equation preview.
-- Save multiple profiles with contaminant and unit metadata; one active at a time.
-- Scatter + fit curve preview chart.
+- Linear, Polynomial (deg 2–4), Manual (slope/intercept) regression.
+- Live R² and equation preview, scatter + fit curve.
+- Save/activate multiple profiles per contaminant.
 
 ### History & Detail
-- All measurements stored in `AsyncStorage` (offline-first).
-- Filter by safe/warning/critical; search by sample ID / contaminant / operator / notes.
-- Detail screen toggles between Absorbance·t and Concentration·t graphs; shows calibration metadata.
+- All measurements in AsyncStorage (offline-first).
+- Search + Safe/Warning/Critical filter chips.
+- Detail screen with Absorbance·t / Concentration·t graph toggle.
 
 ### Export
-- CSV export with full metadata header + per-sample time series.
-- PNG export of the graph via `react-native-view-shot` + native share sheet (`expo-sharing`), with a browser-download fallback for web.
+- CSV with full metadata header + per-sample series via native share sheet.
+- PNG of the chart via `react-native-view-shot`.
 
 ### Settings
 - Dark / Light theme toggle (persisted).
-- Operator name, LED type (RGB or fixed wavelength in nm), thresholds, unit, blank intensity.
+- Operator name, thresholds, unit, blank intensity.
+- Demo Mode toggle.
 
-## Technical Architecture
-- **Expo SDK**: 54 (file-based routing via `expo-router`).
-- **State**: React Context + AsyncStorage (no backend).
-- **BLE**: `react-native-ble-plx` (lazy-required; Demo fallback).
-- **Charts**: custom `react-native-svg` line/scatter chart (works in Expo Go, no native build needed).
-- **Storage**: AsyncStorage for measurements, calibrations, settings, theme, active calibration.
-- **Export**: `expo-file-system` + `expo-sharing` + `react-native-view-shot`.
-- **Icons**: `@expo/vector-icons` (MaterialCommunityIcons).
+## Repository Layout
+```
+/app/frontend/
+  app/                            # expo-router screens
+    _layout.tsx                   # Theme + Store providers
+    index.tsx                     # Splash
+    (tabs)/                       # Bottom-tabs: dashboard/measure/calibrate/history/settings
+    connect.tsx                   # BLE scan + pair
+    measurement/[id].tsx          # Detail + export
+  src/
+    ble.ts                        # BLE service (real + demo)
+    store.tsx                     # AsyncStorage persistence
+    regression.ts                 # Linear / Polynomial / Manual fits
+    Chart.tsx                     # SVG live + scatter chart
+    ThemeContext.tsx              # Dark/Light theme
+  app.json                        # Expo config + BLE plugin + Android permissions
+  eas.json                        # Build profiles (preview APK + production AAB)
+/app/esp32-firmware/
+  aquaspec_biosensor.ino          # Arduino sketch (one-click upload)
+  README.md                       # Wiring + flashing guide
+/app/docs/
+  ESP32_BLE_PROTOCOL.md           # BLE characteristic spec
+  APK_BUILD.md                    # EAS build walkthrough
+```
 
-## BLE Protocol
-See `/app/docs/ESP32_BLE_PROTOCOL.md`.
+## Smart Business Enhancement
+**One-tap Compliance Report** — bundle batch measurements with operator + GPS + calibration + Safe/Warning/Critical counts into a signed PDF/CSV. Targets municipal water audits (EPA / WHO / BIS) and is a natural upsell from a free instrument driver.
 
-## Smart Business Enhancement (scope expansion idea)
-Introduce a one-tap **"Shareable Compliance Report"** — when a field technician completes a batch of measurements, the app can bundle them into a signed PDF/CSV with operator, GPS coordinates, calibration equations, and Safe/Warning/Critical status counts. This is a natural upsell for municipal contracts and regulatory audits (EPA, BIS, WHO guideline reporting) and distinguishes AquaSpec from a plain instrument driver.
+## End-to-End Flow (real hardware)
+1. Flash `aquaspec_biosensor.ino` to ESP32 once via Arduino IDE.
+2. Build APK via `eas build -p android --profile preview`.
+3. Side-load APK on Android phone.
+4. Power on ESP32 → app scan finds "AquaSpec" → tap to connect.
+5. Tap Red/Green/Blue → physical LED on biosensor switches.
+6. Set blank cuvette → set I₀ → place sample → Start → real absorbance streams in.
+7. Save → History → Export CSV via share sheet.
 
 ## Known Limitations
-- Real BLE only works in a **dev build** (Expo Go lacks the native module). App auto-falls back to Demo Mode.
-- Cloud sync deferred per user choice (offline-first MVP).
+- BLE only available in dev/preview/production builds — Expo Go falls back to Demo Mode automatically.
+- Battery monitoring requires extra divider (disabled by default; firmware reports 100%).
+- iOS bundle id set to `com.aquaspec.app` — change before App Store submission.

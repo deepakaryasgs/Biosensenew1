@@ -1,22 +1,37 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "AquaSpec",
+    "slug": "aquaspec",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "aquaspec",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aquaspec.app",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "Connect to AquaSpec biosensor over Bluetooth",
+        "NSBluetoothPeripheralUsageDescription": "Connect to AquaSpec biosensor over Bluetooth",
+        "UIBackgroundModes": ["bluetooth-central"]
+      }
     },
     "android": {
+      "package": "com.aquaspec.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -32,6 +47,14 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#000"
+        }
+      ],
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": ["central"],
+          "bluetoothAlwaysPermission": "Connect to AquaSpec biosensor over Bluetooth"
         }
       ]
     ],
