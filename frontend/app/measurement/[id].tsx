@@ -12,6 +12,15 @@ import { Card, Label, Title, Sub, Badge } from '../../src/components';
 import { Chart } from '../../src/Chart';
 import { spacing, radius } from '../../src/theme';
 
+// Change #6: resolve actual LED colour from wavelength string
+function ledColor(w: string, colors: any): string {
+  const s = (w || '').toLowerCase();
+  if (s.includes('red')) return colors.ledRed;
+  if (s.includes('blue')) return colors.ledBlue;
+  if (s.includes('green')) return colors.ledGreen;
+  return colors.primary;
+}
+
 export default function MeasurementDetail() {
   const { colors } = useTheme();
   const router = useRouter();
@@ -60,7 +69,6 @@ export default function MeasurementDetail() {
     const content = meta + header + rows;
     try {
       if (Platform.OS === 'web') {
-        // Web fallback: open a blob
         const blob = new Blob([content], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -112,7 +120,7 @@ export default function MeasurementDetail() {
         <Title>{m.sampleId}</Title>
         <Sub style={{ marginTop: 4 }}>{new Date(m.createdAt).toLocaleString()}</Sub>
 
-        <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.md }}>
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.md, flexWrap: 'wrap' }}>
           <Badge
             label={m.status}
             color={
@@ -125,7 +133,8 @@ export default function MeasurementDetail() {
                 : colors.textSecondary
             }
           />
-          <Badge label={m.wavelength} color={colors.primary} />
+          {/* Change #6: Wavelength badge shown in its actual LED colour */}
+          <Badge label={m.wavelength} color={ledColor(m.wavelength, colors)} />
         </View>
 
         <Card style={{ marginTop: spacing.md }}>
@@ -167,7 +176,7 @@ export default function MeasurementDetail() {
                 width={screenW}
                 height={200}
                 data={mode === 'absorbance' ? absData : conData}
-                strokeColor={wavelengthColor(m.wavelength, colors)}
+                strokeColor={ledColor(m.wavelength, colors)}
                 xLabel="t (s)"
                 yLabel={mode === 'absorbance' ? 'A' : settings.unit}
               />
@@ -283,7 +292,7 @@ function invert(cal: any, absorbance: number): number | null {
   return (lo + hi) / 2;
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, testID }: { label: string; value: string; testID?: string }) {
   const { colors } = useTheme();
   return (
     <View
@@ -320,12 +329,4 @@ function ChipBtn({ active, label, onPress, testID }: any) {
       <Text style={{ color: active ? '#fff' : colors.textSecondary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{label}</Text>
     </TouchableOpacity>
   );
-}
-
-function wavelengthColor(w: string, colors: any): string {
-  const s = (w || '').toLowerCase();
-  if (s.includes('red')) return colors.ledRed;
-  if (s.includes('blue')) return colors.ledBlue;
-  if (s.includes('green')) return colors.ledGreen;
-  return colors.primary;
 }
