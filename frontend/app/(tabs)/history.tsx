@@ -8,6 +8,15 @@ import { useStore } from '../../src/store';
 import { Card, Label, Title, Sub, Badge } from '../../src/components';
 import { spacing, radius } from '../../src/theme';
 
+// Change #6: returns the actual LED color for the wavelength string
+function ledColor(wavelength: string, colors: any): string {
+  const w = (wavelength || '').toLowerCase();
+  if (w.includes('red')) return colors.ledRed;
+  if (w.includes('blue')) return colors.ledBlue;
+  if (w.includes('green')) return colors.ledGreen;
+  return colors.textSecondary;
+}
+
 export default function History() {
   const { colors } = useTheme();
   const router = useRouter();
@@ -31,7 +40,6 @@ export default function History() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl }}>
-        <Title>History</Title>
         <Sub style={{ marginTop: 4, marginBottom: spacing.md }}>{measurements.length} measurements stored locally</Sub>
 
         <TextInput
@@ -105,6 +113,19 @@ export default function History() {
                 <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 15 }}>{m.sampleId}</Text>
                 <Sub style={{ marginTop: 2 }}>{m.contaminant}</Sub>
                 <Sub style={{ marginTop: 2 }}>{new Date(m.createdAt).toLocaleString()}</Sub>
+                {/* Change #6: LED label in its actual colour */}
+                {m.wavelength && (
+                  <Text style={{
+                    marginTop: 4,
+                    fontSize: 11,
+                    fontWeight: '700',
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                    color: ledColor(m.wavelength, colors),
+                  }}>
+                    ● {m.wavelength}
+                  </Text>
+                )}
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: colors.textPrimary, fontFamily: 'monospace', fontSize: 16 }}>

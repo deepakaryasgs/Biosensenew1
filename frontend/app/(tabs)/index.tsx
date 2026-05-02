@@ -35,7 +35,7 @@ export default function Dashboard() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl }} testID="dashboard-scroll">
         {/* Device card */}
-        <Card testID="device-card" style={{ marginBottom: spacing.md, marginTop: spacing.sm }}>
+        <Card testID="device-card" style={{ marginBottom: spacing.md, marginTop: 0 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
               <Label>Device</Label>
@@ -48,7 +48,6 @@ export default function Dashboard() {
                   color={connected ? colors.safe : colors.textSecondary}
                   testID="connection-status-badge"
                 />
-                {settings.demoMode && <Badge label="Demo" color={colors.primary} />}
               </View>
             </View>
             <MaterialCommunityIcons

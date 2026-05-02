@@ -17,7 +17,7 @@ export default function Measure() {
   const [samples, setSamples] = useState<Sample[]>([]);
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [ledOn, setLedOn] = useState(true);
+  const [ledOn, setLedOn] = useState(false);
   const [wavelength, setWavelength] = useState<Wavelength>('green');
   const [sampleId, setSampleId] = useState('');
   const [contaminant, setContaminant] = useState('');
@@ -27,16 +27,24 @@ export default function Measure() {
 
   const activeCal = calibrations.find((c) => c.id === activeCalibrationId) || null;
 
+  // Only send wavelength to BLE if LED is currently on
   useEffect(() => {
-    bleService.setWavelength(wavelength).catch(() => {});
+    if (ledOn) {
+      bleService.setWavelength(wavelength).catch(() => {});
+    }
+    // If LED is off, just store the selection silently — don't glow
   }, [wavelength]);
 
   useEffect(() => {
     bleService.setBlank(settings.blankIntensity);
   }, [settings.blankIntensity]);
 
+  // When LED turns on, activate the currently selected wavelength; when off, turn it off
   useEffect(() => {
     bleService.setLedOn(ledOn).catch(() => {});
+    if (ledOn) {
+      bleService.setWavelength(wavelength).catch(() => {});
+    }
   }, [ledOn]);
 
   useEffect(() => {
@@ -50,26 +58,23 @@ export default function Measure() {
   const last = samples[samples.length - 1];
   const intensity = last?.intensity ?? 0;
   const absorbance = last?.absorbance ?? 0;
-  const concentration = activeCal ? activeCal.coefficients.reduce((s, c, i) => s + c * Math.pow(absorbance, i), 0) : null;
-  // NOTE: calibration stored as y=absorbance as a function of x=concentration (linear/poly).
-  // For inverse (concentration from absorbance), use the inverse we recomputed below more carefully:
   const concFromCal = activeCal ? invertCal(activeCal, absorbance) : null;
 
   const status = threshold(concFromCal, settings.safeMax, settings.warningMax);
 
+  // Change #11: BLE only — no demo mode
   const handleStart = () => {
-    if (!bleService.getConnected() && !settings.demoMode) {
-      Alert.alert('Not connected', 'Connect a device or enable Demo Mode in Settings.');
+    if (!bleService.getConnected()) {
+      Alert.alert('Not connected', 'Connect a BLE device first to start measuring.');
       return;
-    }
-    if (!bleService.getConnected() && settings.demoMode) {
-      // auto-connect demo
-      bleService.setDemoMode(true);
-      bleService.connect({ id: 'demo-auto', name: 'BioSensor (Demo)', isDemo: true });
     }
     samplesRef.current = [];
     setSamples([]);
     bleService.setBlank(Number(blankI0) || 1000);
+    // Change #4: Turn LED on when experiment starts
+    setLedOn(true);
+    bleService.setLedOn(true).catch(() => {});
+    bleService.setWavelength(wavelength).catch(() => {});
     bleService.start();
     setRunning(true);
     setPaused(false);
@@ -89,6 +94,10 @@ export default function Measure() {
     bleService.stop();
     setRunning(false);
     setPaused(false);
+    // Change #4: Turn LED off when experiment stops
+    setLedOn(false);
+    bleService.setLedOn(false).catch(() => {});
+
     if (samplesRef.current.length === 0) return;
     const pts = samplesRef.current;
     const meanI = pts.reduce((s, p) => s + p.intensity, 0) / pts.length;
@@ -112,6 +121,7 @@ export default function Measure() {
       points: pts.map((p) => ({ t: p.t, intensity: p.intensity, absorbance: p.absorbance })),
     };
     await addMeasurement(meas);
+    // Change #10: Styled inline confirmation instead of Alert
     Alert.alert('Saved', 'Measurement stored in history.', [
       { text: 'View', onPress: () => router.push(`/measurement/${meas.id}`) },
       { text: 'OK' },
@@ -131,6 +141,16 @@ export default function Measure() {
     return colors.textSecondary;
   };
 
+  // Change #5: Handle wavelength switch — if LED is already on, switch and glow; if off, just select
+  const handleWavelengthChange = (w: Wavelength) => {
+    setWavelength(w);
+    if (ledOn) {
+      // LED is already on — switch and keep glowing
+      bleService.setWavelength(w).catch(() => {});
+    }
+    // If LED is off — just change selection, don't send to BLE
+  };
+
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl }}>
@@ -145,10 +165,11 @@ export default function Measure() {
             />
           </View>
 
+          {/* Change #8: Concentration on top (large), then Absorbance (OD), then Intensity */}
           <View style={{ marginTop: spacing.md }}>
-            <Text style={{ color: colors.textSecondary, fontSize: 11, letterSpacing: 1.5 }}>ABSORBANCE (OD)</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11, letterSpacing: 1.5 }}>CONCENTRATION</Text>
             <Text
-              testID="live-absorbance"
+              testID="live-concentration"
               style={{
                 color: colors.textPrimary,
                 fontSize: 52,
@@ -158,33 +179,44 @@ export default function Measure() {
                 letterSpacing: -1,
               }}
             >
+              {concFromCal != null ? concFromCal.toFixed(2) : '—'}
+            </Text>
+            {/* Change #3: mg/L → mg/l */}
+            <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 2 }}>
+              {concFromCal != null ? settings.unit.replace('mg/L', 'mg/l').replace('MG/L', 'mg/l') : 'No calibration active'}
+            </Text>
+          </View>
+
+          <View style={{ marginTop: spacing.md }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 11, letterSpacing: 1.5 }}>ABSORBANCE (OD)</Text>
+            <Text
+              testID="live-absorbance"
+              style={{
+                color: colors.textPrimary,
+                fontSize: 28,
+                fontFamily: 'monospace',
+                fontVariant: ['tabular-nums'],
+                fontWeight: '600',
+                marginTop: 2,
+              }}
+            >
               {absorbance.toFixed(3)}
             </Text>
           </View>
 
           <View style={{ marginTop: spacing.md }}>
-            <Text style={{ color: colors.textSecondary, fontSize: 11, letterSpacing: 1.5 }}>CONCENTRATION</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 11, letterSpacing: 1.5 }}>INTENSITY</Text>
             <Text
-              testID="live-concentration"
               style={{
                 color: colors.textPrimary,
                 fontSize: 22,
                 fontFamily: 'monospace',
                 fontVariant: ['tabular-nums'],
-                marginTop: 4,
+                marginTop: 2,
               }}
             >
-              {concFromCal != null ? `${concFromCal.toFixed(2)} ${settings.unit}` : '—'}
+              {intensity.toFixed(0)}
             </Text>
-          </View>
-
-          <View style={{ flexDirection: 'row', marginTop: spacing.md, gap: 10 }}>
-            <MiniMetric label="Intensity" value={intensity.toFixed(0)} unit="I" />
-            <MiniMetric
-              label="Concentration"
-              value={concFromCal != null ? concFromCal.toFixed(2) : '—'}
-              unit={settings.unit}
-            />
           </View>
 
           <View style={{ marginTop: spacing.md }}>
@@ -216,8 +248,6 @@ export default function Measure() {
               strokeColor={wavelengthColor()}
               xLabel="t (s)"
               yLabel="A"
-              minY={0}
-              maxY={Math.max(1, ...samples.map((s) => s.absorbance), 0) * 1.2 || 1}
             />
           </View>
         </Card>
@@ -245,8 +275,9 @@ export default function Measure() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>
               <Label>LED · Wavelength</Label>
-              <Text style={{ color: wavelengthColor(), marginTop: 4, fontFamily: 'monospace', fontSize: 16 }}>
-                {wavelengthLabel()}
+              {/* Change #5: Show dim color when off, bright when on */}
+              <Text style={{ color: ledOn ? wavelengthColor() : colors.textSecondary, marginTop: 4, fontFamily: 'monospace', fontSize: 16 }}>
+                {wavelengthLabel()}{ledOn ? '' : ' · Off'}
               </Text>
             </View>
             <TouchableOpacity
@@ -268,42 +299,43 @@ export default function Measure() {
           </View>
 
           <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.md }}>
-            {(['red', 'green', 'blue'] as Wavelength[]).map((w) => (
-              <TouchableOpacity
-                key={w}
-                testID={`wavelength-${w}`}
-                onPress={() => setWavelength(w)}
-                style={{
-                  flex: 1,
-                  paddingVertical: 12,
-                  borderRadius: radius.md,
-                  borderWidth: 1,
-                  borderColor:
-                    wavelength === w
-                      ? w === 'red'
-                        ? colors.ledRed
-                        : w === 'green'
-                        ? colors.ledGreen
-                        : colors.ledBlue
-                      : colors.border,
-                  backgroundColor: wavelength === w ? colors.surfaceElevated : 'transparent',
-                  alignItems: 'center',
-                }}
-              >
-                <View
+            {(['red', 'green', 'blue'] as Wavelength[]).map((w) => {
+              const wColor = w === 'red' ? colors.ledRed : w === 'green' ? colors.ledGreen : colors.ledBlue;
+              const isSelected = wavelength === w;
+              // Change #5: dot only glows (full opacity) when LED is on AND this wavelength selected
+              const isGlowing = isSelected && ledOn;
+              return (
+                <TouchableOpacity
+                  key={w}
+                  testID={`wavelength-${w}`}
+                  onPress={() => handleWavelengthChange(w)}
                   style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 7,
-                    backgroundColor: w === 'red' ? colors.ledRed : w === 'green' ? colors.ledGreen : colors.ledBlue,
-                    marginBottom: 4,
+                    flex: 1,
+                    paddingVertical: 12,
+                    borderRadius: radius.md,
+                    borderWidth: 1,
+                    borderColor: isSelected ? wColor : colors.border,
+                    backgroundColor: isSelected ? colors.surfaceElevated : 'transparent',
+                    alignItems: 'center',
                   }}
-                />
-                <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>
-                  {w}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                >
+                  <View
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: 7,
+                      backgroundColor: wColor,
+                      marginBottom: 4,
+                      // Dim when LED is off
+                      opacity: isGlowing ? 1 : 0.25,
+                    }}
+                  />
+                  <Text style={{ color: isSelected ? wColor : colors.textSecondary, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>
+                    {w}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </Card>
 
@@ -333,14 +365,11 @@ export default function Measure() {
 }
 
 function invertCal(cal: any, absorbance: number): number | null {
-  // cal stored as y = f(x) where x=concentration, y=absorbance.
-  // Need inverse: solve f(x) = absorbance.
   if (cal.modelType === 'linear' || cal.degree === 1) {
     const [a, b] = cal.coefficients;
     if (b === 0) return null;
     return (absorbance - a) / b;
   }
-  // Polynomial inversion via bisection over standards range
   const xs = (cal.standards as { concentration: number }[]).map((s) => s.concentration);
   let lo = Math.min(...xs);
   let hi = Math.max(...xs);
@@ -369,30 +398,6 @@ function threshold(conc: number | null, safe: number, warn: number): 'safe' | 'w
   if (conc <= safe) return 'safe';
   if (conc <= warn) return 'warning';
   return 'critical';
-}
-
-function MiniMetric({ label, value, unit }: any) {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={{
-        flex: 1,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: radius.md,
-        padding: spacing.md,
-        backgroundColor: colors.surfaceElevated,
-      }}
-    >
-      <Text style={{ color: colors.textSecondary, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase' }}>{label}</Text>
-      <Text
-        style={{ color: colors.textPrimary, fontSize: 22, fontFamily: 'monospace', fontVariant: ['tabular-nums'], marginTop: 4 }}
-      >
-        {value}
-      </Text>
-      <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>{unit}</Text>
-    </View>
-  );
 }
 
 function CtrlBtn({ icon, label, color, onPress, testID, big }: any) {

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../src/ThemeContext';
@@ -14,23 +14,34 @@ interface StandardRow {
   absorbance: string;
 }
 
+const DEFAULT_ROWS: StandardRow[] = [
+  { concentration: '0', absorbance: '0' },
+  { concentration: '5', absorbance: '0.12' },
+  { concentration: '10', absorbance: '0.24' },
+  { concentration: '20', absorbance: '0.48' },
+];
+
 export default function Calibrate() {
   const { colors } = useTheme();
   const { calibrations, activeCalibrationId, addCalibration, deleteCalibration, setActiveCalibrationId } = useStore();
 
   const [name, setName] = useState('');
   const [contaminant, setContaminant] = useState('');
-  const [unit, setUnit] = useState('mg/L');
+  // Change #3: default unit mg/l (lowercase)
+  const [unit, setUnit] = useState('mg/l');
   const [modelType, setModelType] = useState<'linear' | 'polynomial' | 'manual'>('linear');
   const [degree, setDegree] = useState(2);
   const [manualSlope, setManualSlope] = useState('1');
   const [manualIntercept, setManualIntercept] = useState('0');
-  const [rows, setRows] = useState<StandardRow[]>([
-    { concentration: '0', absorbance: '0' },
-    { concentration: '5', absorbance: '0.12' },
-    { concentration: '10', absorbance: '0.24' },
-    { concentration: '20', absorbance: '0.48' },
-  ]);
+  const [rows, setRows] = useState<StandardRow[]>(DEFAULT_ROWS);
+  const [deleteTarget, setDeleteTarget] = useState<CalibrationProfile | null>(null);
+
+  // Change #9: When switching model type, reset rows to default so previous points don't bleed into new graph
+  const handleModelTypeChange = (m: 'linear' | 'polynomial' | 'manual') => {
+    setModelType(m);
+    // Clear points from previous calibration type so the graph is clean
+    setRows(DEFAULT_ROWS);
+  };
 
   const points = useMemo(
     () =>
@@ -57,7 +68,7 @@ export default function Calibrate() {
       id: `cal-${Date.now()}`,
       name: name.trim(),
       contaminant: contaminant.trim() || 'Unknown',
-      unit: unit.trim() || 'mg/L',
+      unit: unit.trim() || 'mg/l',
       modelType,
       degree: regression.degree,
       coefficients: regression.coefficients,
@@ -80,7 +91,6 @@ export default function Calibrate() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl }}>
-        <Title>Calibration</Title>
         <Sub style={{ marginTop: 4, marginBottom: spacing.md }}>
           Map absorbance to concentration with standards.
         </Sub>
@@ -94,16 +104,18 @@ export default function Calibrate() {
               <Input testID="cal-contaminant" value={contaminant} onChangeText={setContaminant} placeholder="Contaminant" />
             </View>
             <View style={{ flex: 1 }}>
-              <Input testID="cal-unit" value={unit} onChangeText={setUnit} placeholder="Unit" />
+              {/* Change #3: placeholder mg/l */}
+              <Input testID="cal-unit" value={unit} onChangeText={setUnit} placeholder="Unit (mg/l)" />
             </View>
           </View>
 
+          {/* Change #9: use handleModelTypeChange to clear graph when switching */}
           <View style={{ flexDirection: 'row', gap: 6, marginTop: spacing.sm }}>
             {(['linear', 'polynomial', 'manual'] as const).map((m) => (
               <TouchableOpacity
                 key={m}
                 testID={`model-${m}`}
-                onPress={() => setModelType(m)}
+                onPress={() => handleModelTypeChange(m)}
                 style={{
                   flex: 1,
                   paddingVertical: 10,
@@ -295,14 +307,10 @@ export default function Calibrate() {
                     {active ? 'Deactivate' : 'Set Active'}
                   </Text>
                 </TouchableOpacity>
+                {/* Change #10: styled in-app delete confirmation modal instead of Alert */}
                 <TouchableOpacity
                   testID={`delete-${c.id}`}
-                  onPress={() =>
-                    Alert.alert('Delete?', c.name, [
-                      { text: 'Cancel' },
-                      { text: 'Delete', style: 'destructive', onPress: () => deleteCalibration(c.id) },
-                    ])
-                  }
+                  onPress={() => setDeleteTarget(c)}
                   style={{
                     paddingVertical: 10,
                     paddingHorizontal: 16,
@@ -318,6 +326,69 @@ export default function Calibrate() {
           );
         })}
       </ScrollView>
+
+      {/* Change #10: Styled delete confirmation modal */}
+      <Modal
+        visible={!!deleteTarget}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteTarget(null)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: spacing.lg,
+        }}>
+          <View style={{
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: radius.lg ?? 16,
+            padding: spacing.lg,
+            width: '100%',
+            maxWidth: 340,
+          }}>
+            <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 17, marginBottom: 8 }}>
+              Delete Calibration?
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: spacing.lg }}>
+              "{deleteTarget?.name}" will be permanently removed.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => setDeleteTarget(null)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: radius.md,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: colors.textSecondary, fontWeight: '700' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (deleteTarget) deleteCalibration(deleteTarget.id);
+                  setDeleteTarget(null);
+                }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: radius.md,
+                  backgroundColor: colors.critical,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

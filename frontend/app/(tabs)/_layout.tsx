@@ -1,7 +1,25 @@
 import React from 'react';
+import { View, Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../src/ThemeContext';
+
+function AppHeader({ subtitle }: { subtitle: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <MaterialCommunityIcons name="water-opacity" size={18} color={colors.primary} />
+        <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: '700', letterSpacing: -0.3 }}>
+          Aqua<Text style={{ color: colors.primary }}>Spec</Text>
+        </Text>
+      </View>
+      <Text style={{ color: colors.textSecondary, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 1 }}>
+        {subtitle}
+      </Text>
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -27,7 +45,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
+          headerTitle: () => <AppHeader subtitle="Home" />,
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="view-dashboard-outline" color={color} size={size} />,
           tabBarButtonTestID: 'tab-dashboard',
         }}
@@ -36,6 +55,7 @@ export default function TabLayout() {
         name="measure"
         options={{
           title: 'Measure',
+          headerTitle: () => <AppHeader subtitle="Measure" />,
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="test-tube" color={color} size={size} />,
           tabBarButtonTestID: 'tab-measure',
         }}
@@ -44,6 +64,7 @@ export default function TabLayout() {
         name="calibrate"
         options={{
           title: 'Calibrate',
+          headerTitle: () => <AppHeader subtitle="Calibrate" />,
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="tune-vertical" color={color} size={size} />,
           tabBarButtonTestID: 'tab-calibrate',
         }}
@@ -52,6 +73,7 @@ export default function TabLayout() {
         name="history"
         options={{
           title: 'History',
+          headerTitle: () => <AppHeader subtitle="History" />,
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="history" color={color} size={size} />,
           tabBarButtonTestID: 'tab-history',
         }}
@@ -60,6 +82,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: 'Settings',
+          headerTitle: () => <AppHeader subtitle="Settings" />,
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="cog-outline" color={color} size={size} />,
           tabBarButtonTestID: 'tab-settings',
         }}

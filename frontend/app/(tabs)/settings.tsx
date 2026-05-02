@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, ScrollView, Switch, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Switch, TextInput, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../src/ThemeContext';
 import { useStore } from '../../src/store';
 import { Card, Label, Title, Sub } from '../../src/components';
@@ -9,11 +10,11 @@ import { spacing, radius } from '../../src/theme';
 export default function Settings() {
   const { colors, mode, setMode } = useTheme();
   const { settings, updateSettings } = useStore();
+  const [aboutVisible, setAboutVisible] = useState(false);
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl }}>
-        <Title>Settings</Title>
 
         <Card style={{ marginTop: spacing.md }} testID="appearance-card">
           <Label>Appearance</Label>
@@ -41,23 +42,9 @@ export default function Settings() {
           </View>
         </Card>
 
-        <Card style={{ marginTop: spacing.md }} testID="demo-card">
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flex: 1 }}>
-              <Label>Demo Mode</Label>
-              <Sub style={{ marginTop: 4 }}>Run with simulated data.</Sub>
-            </View>
-            <Switch
-              testID="demo-switch"
-              value={settings.demoMode}
-              onValueChange={(v) => updateSettings({ demoMode: v })}
-              trackColor={{ true: colors.primary, false: colors.border }}
-            />
-          </View>
-        </Card>
-
         <Card style={{ marginTop: spacing.md }} testID="thresholds-card">
-          <Label>Thresholds ({settings.unit})</Label>
+          {/* Change #3: mg/L → mg/l in placeholder */}
+          <Label>Thresholds ({settings.unit.replace('mg/L', 'mg/l').replace('MG/L', 'mg/l')})</Label>
           <Sub style={{ marginTop: 4 }}>
             Safe if ≤ Safe max; Warning if ≤ Warning max; Critical otherwise.
           </Sub>
@@ -81,7 +68,7 @@ export default function Settings() {
               />
             </View>
           </View>
-          <Input testID="unit-input" value={settings.unit} onChangeText={(v) => updateSettings({ unit: v })} placeholder="Unit (e.g. mg/L)" />
+          <Input testID="unit-input" value={settings.unit} onChangeText={(v) => updateSettings({ unit: v })} placeholder="Unit (e.g. mg/l)" />
         </Card>
 
         <Card style={{ marginTop: spacing.md }} testID="blank-card">
@@ -96,14 +83,10 @@ export default function Settings() {
           <Sub style={{ marginTop: 4 }}>I₀ is the transmitted light through a blank cuvette. Used for A = log₁₀(I₀/I).</Sub>
         </Card>
 
+        {/* Change #7 & #10: Styled About button that opens an in-app modal */}
         <TouchableOpacity
           testID="about-btn"
-          onPress={() =>
-            Alert.alert(
-              'AquaSpec',
-              'Portable water-quality biosensor companion. BLE + Demo mode. Local-only offline-first.\nBeer-Lambert: A = ε · l · c.',
-            )
-          }
+          onPress={() => setAboutVisible(true)}
           style={{
             marginTop: spacing.lg,
             padding: 14,
@@ -116,6 +99,93 @@ export default function Settings() {
           <Text style={{ color: colors.textSecondary, fontWeight: '600', letterSpacing: 1 }}>ABOUT</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Change #10: Styled in-app About modal matching the app's interface */}
+      <Modal
+        visible={aboutVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAboutVisible(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: spacing.lg,
+        }}>
+          <View style={{
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: radius.lg ?? 16,
+            padding: spacing.lg,
+            width: '100%',
+            maxWidth: 360,
+            alignItems: 'center',
+          }}>
+            {/* Icon + name */}
+            <View style={{
+              width: 72,
+              height: 72,
+              borderRadius: 18,
+              backgroundColor: colors.surfaceElevated,
+              borderWidth: 1,
+              borderColor: colors.border,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: spacing.md,
+            }}>
+              <MaterialCommunityIcons name="water-opacity" size={38} color={colors.primary} />
+            </View>
+
+            <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: '700', letterSpacing: -0.3 }}>
+              Aqua<Text style={{ color: colors.primary }}>Spec</Text>
+            </Text>
+
+            <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
+              Portable water-quality biosensor
+            </Text>
+
+            <View style={{
+              marginTop: spacing.md,
+              paddingVertical: 8,
+              paddingHorizontal: 16,
+              backgroundColor: colors.surfaceElevated,
+              borderRadius: radius.pill,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}>
+              <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 12, letterSpacing: 1 }}>
+                IIT ROORKEE
+              </Text>
+            </View>
+
+            <View style={{ marginTop: spacing.md, width: '100%' }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 11, letterSpacing: 1, textAlign: 'center', marginBottom: 8, textTransform: 'uppercase' }}>
+                Technology
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
+                BLE optical sensor · Beer-Lambert Law{'\n'}
+                A = ε · l · c · · · A = log₁₀(I₀/I)
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setAboutVisible(false)}
+              style={{
+                marginTop: spacing.lg,
+                backgroundColor: colors.primary,
+                paddingVertical: 12,
+                paddingHorizontal: 40,
+                borderRadius: radius.pill,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', letterSpacing: 1 }}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
